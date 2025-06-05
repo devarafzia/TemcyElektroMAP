@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temcy ElektroMap</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <section class="navbar">
+        <ul class="ul-navbar">
+            <li class="a-navbar">
+              <a href="tentang.html" class="a-navbar">Tentang</a>
+            </li>
+            <li class="a-navbar">
+              <a href="Kontak.html" class="b-navbar">Kontak</a>
+            </li>
+        </ul>
+    </section>
+
+  <section class="hero">
+    <h1><span class="temcy">Temcy</span> <span class="elektromap">ElektroMap</span></h1>
+    <p class="definisi" style="line-height: 1.5;">
+      Temukan servis elektronik terpercaya dan profesional.<br>
+      Kami membantu Anda memperbaiki peralatan elektronik dengan<br>
+      harga yang kompetitif dan layanan yang memuaskan.
+    </p>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Cari Jenis Elektronik">
+      <button onclick="searchService()">Search</button>
+    </div>
+  </section>
+
+  <script>
+  function searchService() {
+    const keyword = document.getElementById('searchInput').value.trim();
+    if (keyword) {
+      window.location.href = `page2.html?keyword=${encodeURIComponent(keyword)}`;
+    }
+  }
+</script>
+
+  <section class="popular">
+    <h2>Popular Search</h2>
+    <div class="cards">
+      <div class="card">
+        <img src="laptop.jpg" alt="Laptop">
+        <div onclick="searchFromCard('servis laptop')">
+          <h3>Servis Laptop</h3>
+        </div>
+        <div onclick="searchFromCard('servis laptop')">
+          <p>Find Here</p>
+        </div>
+      </div>
+      <script>
+        function searchFromCard(keyword) {
+          window.location.href = `page2.html?keyword=${encodeURIComponent(keyword)}`;
+        }
+      </script>
+      <div class="card">
+        <img src="kipas.jpg" alt="Kipas Angin">
+        <div onclick="searchFromCard('servis kipas angin')">
+          <h3>Servis Kipas Angin</h3>
+        </div>
+        <div onclick="searchFromCard('servis kipas angin')">
+          <p>Find Here</p>
+        </div>
+      </div>
+      <div class="card">
+        <img src="hp.jpg" alt="HP">
+        <div onclick="searchFromCard('servis HP')">
+          <h3>Servis HP</h3>
+        </div>
+        <div onclick="searchFromCard('servis HP')">
+          <p>Find Here</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+  <script>
+    // Minta izin lokasi pengguna
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          // Marker lokasi pengguna
+          L.marker([userLat, userLng], {
+            icon: L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32]
+            })
+          }).addTo(map)
+            .bindPopup("<b>Lokasi Anda</b>")
+            .openPopup();
+
+          // Zoom ke lokasi pengguna
+          map.setView([userLat, userLng], 15);
+        },
+        function(error) {
+          alert("Gagal mendapatkan lokasi: " + error.message);
+        }
+      );
+    } else {
+      alert("Geolocation tidak didukung di browser ini.");
+    }
+  </script>
+
+</body>
+</html>
