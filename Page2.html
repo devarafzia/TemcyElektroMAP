@@ -89,12 +89,16 @@
       overflow-x: auto;
     }
     .card {
-      background-color: white;
-      background: white;
+      background: #ffffff;
       border-radius: 10px;
       padding: 10px;
+      align-items: center;
+      display: inline-flex;
+      text-align: center;
+      justify-content: center;
       width: 200px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      opacity: 1;
     }
     .card img {
       width: 100%;
@@ -137,7 +141,7 @@
 
 <div class="cards-container">
   <span id="searchKeyword" style="display: none;"></span>
-  <div id="resultsContainer" style="display: flex; flex-wrap: wrap; gap: 20px"></div>
+  <div id="resultsContainer" style="display: flex; flex-wrap: wrap; gap: 20px;"></div>
 </div>
 
 <script src="script.js"></script>
@@ -148,7 +152,7 @@
   function searchService() {
     const keyword = document.getElementById('searchInput').value.trim();
     if (keyword) {
-      window.location.href = `Page2.html?keyword=${encodeURIComponent(keyword)}`;
+      window.location.href = `page2.html?keyword=${encodeURIComponent(keyword)}`;
     }
   }
 </script>
