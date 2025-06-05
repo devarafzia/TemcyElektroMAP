@@ -153,7 +153,7 @@ function loadSearchResults() {
 
 function showStoreDetail(idToko) {
   // Redirect ke Page3 dengan parameter ID toko
-  window.location.href = `Page3.html?id=${idToko}`;
+  window.location.href = `page3.html?id=${idToko}`;
 }
 
 // Function untuk mendapatkan data toko berdasarkan ID
