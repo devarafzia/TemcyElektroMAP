@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temcy ElektroMap</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: url('bg2.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+      color: #212a1c;
+    }
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .search-bar input {
+      padding: 15px;
+      width: 400px;
+      border: none;
+      border-radius: 10px 0 0 10px;
+    }
+    .search-bar button {
+      text-decoration: none;
+      padding: 15px 30px;
+      background: #212a1c;
+      color: white;
+      border: none;
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+    }
+.p2search {
+  text-decoration: none;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+    .categories {
+      background: white;
+      margin: 0 auto;
+      padding: 10px;
+      border-radius: 15px;
+      width: 40%;
+    }
+    .categories h4 {
+      margin: 10px 0;
+    }
+    .category-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+      background: #212a1c;
+      border-radius: 15px;
+      overflow-x: auto;
+    }
+    .category-buttons button {
+      padding: 10px 20px;
+      border: 1px solid white;
+      background: transparent;
+      color: white;
+      border-radius: 25px;
+      cursor: pointer;
+    }
+    .category-buttons button.active {
+      background: white;
+      color: #84835c;
+    }
+    .cards-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+    .card {
+      background-color: white;
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      width: 200px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .card img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .card h3 {
+      font-size: 16px;
+    }
+    .card p {
+      font-size: 14px;
+      color: #555;
+    }
+    .card button {
+      margin-top: 10px;
+      background: #212a1c;
+      color: white;
+      border: none;
+      padding: 8px;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .card button:hover {
+      background: #212a1c;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <h1><a href="index.html" style="color: #3a2e2e; text-decoration: none;">Temcy <strong>ElektroMap</strong></a></h1>
+  </div>
+</header>
+
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Cari Jenis Elektronik Lainnya...">
+  <button onclick="searchService()">Search</button>
+</div>
+
+<div class="cards-container">
+  <span id="searchKeyword" style="display: none;"></span>
+  <div id="resultsContainer" style="display: flex; flex-wrap: wrap; gap: 20px"></div>
+</div>
+
+<script src="script.js"></script>
+<script>
+  // Load search results when page loads
+  window.onload = loadSearchResults;
+  
+  function searchService() {
+    const keyword = document.getElementById('searchInput').value.trim();
+    if (keyword) {
+      window.location.href = `Page2.html?keyword=${encodeURIComponent(keyword)}`;
+    }
+  }
+</script>
+
+</body>
+</html>

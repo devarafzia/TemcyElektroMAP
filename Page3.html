@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temcy ElektroMap</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: url('bg2.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+      color: #3a2e2e;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .map-container {
+      background-color: white;
+      width: 500px;
+      border-radius: 12px;
+      overflow: hidden;
+      display: block;
+      position: relative;
+    }
+
+    #map {
+      height: 540px;
+      width: 100%;
+      margin: 0 auto;
+      z-index: 1;
+    }
+
+    .info-panel {
+      background-color: white;
+      width: 300px;
+      border-radius: 10px;
+      padding: 15px;
+      border-top: 15px solid #7c805c;
+      display: flex;
+      flex-direction: column;
+      max-height: 540px;
+      overflow-y: auto;
+    }
+
+    .info-panel img {
+      width: 100%;
+      border-radius: 5px;
+    }
+
+    .info-panel h2 {
+      text-align: center;
+      font-size: 20px;
+      margin: 10px 0 5px;
+    }
+
+    .info-panel p {
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 4px 0;
+    }
+
+    .info-panel p span {
+      font-weight: bold;
+    }
+
+    .dots {
+      text-align: center;
+      font-size: 24px;
+      margin: 10px 0;
+      letter-spacing: 6px;
+    }
+
+    .nearby-title {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .nearby {
+      margin-top: 10px;
+    }
+
+    .nearby-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .nearby-item i {
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <h1><a href="index.html" style="color: #3a2e2e; text-decoration: none;">Temcy <strong>ElektroMap</strong></a></h1>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Map -->
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel" id="infoPanel">
+      <img src="laptop.jpg" alt="Golden Service">
+      <h2>Golden Service</h2>
+      <p><span>Alamat:</span> Jl. Galang Sewu Raya No. 20, Tembalang, Kec. Tembalang, Kota Semarang, Jawa Tengah, 50271
+      </p>
+      <p><span>Nomor Kontak:</span> 081221233357</p>
+      <p><span>Jam Operasional:</span> 09.00 - 21.00</p>
+      <p><span>Kisaran Biaya:</span> 20.000 - 40.000</p>
+      <p><span>Website/Sosial Media:</span> @gtechtembalang (ig)</p>
+
+      <div class="dots">••••</div>
+
+      <div class="nearby-title">Terdekat Lainnya</div>
+      <div class="nearby">
+        <div class="nearby-item">📍 Risen Computer – 500 meter</div>
+        <div class="nearby-item">📍 Kangservis.id – 650 meter</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Initialize map
+    let map;
+    let marker;
+
+    function initMap() {
+      // Get store ID from URL parameter
+      const params = new URLSearchParams(window.location.search);
+      const storeId = params.get('id');
+
+      let storeData;
+      let defaultLat = -7.0552154;
+      let defaultLng = 110.4327887;
+
+      if (storeId) {
+        storeData = getStoreById(storeId);
+        if (storeData) {
+          defaultLat = storeData.lat;
+          defaultLng = storeData.long;
+          updateStoreInfo(storeData);
+        }
+      }
+
+      // Initialize map
+      map = L.map('map').setView([defaultLat, defaultLng], 16);
+
+      // Add OpenStreetMap tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Add marker for store location
+      marker = L.marker([defaultLat, defaultLng]).addTo(map);
+      if (storeData) {
+        marker.bindPopup(`<b>${storeData.namaToko}</b><br>${storeData.alamat}`).openPopup();
+      } else {
+        marker.bindPopup('<b>Golden Service</b><br>Jl. Galang Sewu Raya No. 20').openPopup();
+      }
+
+      // Force map to refresh after a short delay
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
+    }
+
+    function updateStoreInfo(storeData) {
+      // Update info panel with store data
+      document.querySelector('.info-panel img').src = storeData.image;
+      document.querySelector('.info-panel img').alt = storeData.namaToko;
+      document.querySelector('.info-panel h2').textContent = storeData.namaToko;
+
+      // Update info details
+      const infoParts = document.querySelectorAll('.info-panel p');
+      infoParts[0].innerHTML = `<span>Alamat:</span> ${storeData.alamat}`;
+      infoParts[1].innerHTML = `<span>Nomor Kontak:</span> ${storeData.noTelp}`;
+      infoParts[2].innerHTML = `<span>Jam Operasional:</span> ${storeData.jamOperasional}`;
+      infoParts[3].innerHTML = `<span>Kisaran Biaya:</span> ${storeData.kisaranBiaya || '20.000 - 40.000'}`;
+      infoParts[4].innerHTML = `<span>Website/Sosial Media:</span> ${storeData.sosialMedia || '@store (ig)'}`;
+
+      // Update layanan
+      if (storeData.layanan && storeData.layanan.length > 0) {
+        const layananText = storeData.layanan.join(', ');
+        const newLayananP = document.createElement('p');
+        newLayananP.innerHTML = `<span>Layanan:</span> ${layananText}`;
+        infoParts[2].parentNode.insertBefore(newLayananP, infoParts[3]);
+      }
+    }
+
+    // Initialize when page loads
+    window.onload = initMap;
+  </script>
+
+<script>
+    // Minta izin lokasi pengguna
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          // Marker lokasi pengguna
+          L.marker([userLat, userLng], {
+            icon: L.icon({
+              iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png',
+              iconSize: [32, 32],
+              iconAnchor: [16, 32]
+            })
+          }).addTo(map)
+            .bindPopup("<b>Lokasi Anda</b>")
+            .openPopup();
+
+          // Zoom ke lokasi pengguna
+          map.setView([userLat, userLng], 15);
+        },
+        function(error) {
+          alert("Gagal mendapatkan lokasi: " + error.message);
+        }
+      );
+    } else {
+      alert("Geolocation tidak didukung di browser ini.");
+    }
+  </script>
+</body>
+
+</html>
