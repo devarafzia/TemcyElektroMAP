@@ -263,6 +263,8 @@
       // Force map to refresh after a short delay
       setTimeout(() => {
         map.invalidateSize();
+        // Setup geolocation after map is ready
+        setupGeolocation();
       }, 100);
     }
 
@@ -341,7 +343,7 @@
         nearbyItem.style.cursor = 'pointer';
         nearbyItem.innerHTML = `📍 ${store.namaToko} – ${distanceText}`;
         nearbyItem.onclick = () => {
-          window.location.href = `page3.html?id=${store.idToko}`;
+          window.location.href = `Page3.html?id=${store.idToko}`;
         };
         nearbyContainer.appendChild(nearbyItem);
       });
@@ -464,25 +466,21 @@
     }
 
     // Initialize when page loads and Leaflet is ready
-    window.onload = function() {
-      // Wait for Leaflet to be fully loaded
+    function checkLeafletAndInit() {
       if (typeof L !== 'undefined') {
         initMap();
       } else {
-        setTimeout(() => {
-          if (typeof L !== 'undefined') {
-            initMap();
-          }
-        }, 500);
+        setTimeout(checkLeafletAndInit, 100);
       }
-    };
+    }
+    
+    window.onload = checkLeafletAndInit;
   </script>
 
 <script>
-    // Delay geolocation request until map is ready
-    setTimeout(() => {
-      // Minta izin lokasi pengguna
-      if ("geolocation" in navigator && typeof L !== 'undefined') {
+    // Function to setup geolocation after map is ready
+    function setupGeolocation() {
+      if ("geolocation" in navigator && typeof L !== 'undefined' && map) {
         navigator.geolocation.getCurrentPosition(
           function(position) {
             const userLat = position.coords.latitude;
@@ -506,22 +504,19 @@
 
             // Draw connection line between user and store
             drawConnectionLine();
-
-            // Don't auto zoom to user, keep focus on store
           },
           function(error) {
-            alert("Gagal mendapatkan lokasi: " + error.message);
+            console.log("Gagal mendapatkan lokasi: " + error.message);
           }
         );
-      } else {
-        if (typeof L === 'undefined') {
-          // Retry if Leaflet is not loaded yet
-          setTimeout(arguments.callee, 500);
-        } else {
-          alert("Geolocation tidak didukung di browser ini.");
-        }
+      } else if (typeof L === 'undefined' || !map) {
+        // Retry if Leaflet or map is not ready yet
+        setTimeout(setupGeolocation, 500);
       }
-    }, 1500); // Wait 1.5 seconds for map initialization
+    }
+    
+    // Call geolocation setup after a short delay
+    setTimeout(setupGeolocation, 1000);
   </script>
   <script src="script.js"></script>
 </body>
