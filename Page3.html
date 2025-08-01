@@ -110,6 +110,64 @@
     .nearby-item i {
       font-size: 18px;
     }
+
+    .zoom-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+
+    .zoom-btn {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 60px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      font-size: 12px;
+    }
+
+    .zoom-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .location-controls {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .location-btn {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .location-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .nearby-item:hover {
+      background: #f0f0f0;
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
   </style>
 </head>
 
@@ -125,6 +183,13 @@
     <!-- Map -->
     <div class="map-container">
       <div id="map"></div>
+      <div class="zoom-controls">
+        <div class="zoom-btn" id="zoomToggle" onclick="toggleZoom()">Zoom In</div>
+      </div>
+      <div class="location-controls">
+        <div class="location-btn" onclick="zoomToStore()">Zoom Toko</div>
+        <div class="location-btn" onclick="zoomToUser()">Lokasi Saya</div>
+      </div>
     </div>
 
     <!-- Info Panel -->
@@ -141,19 +206,21 @@
       <div class="dots">••••</div>
 
       <div class="nearby-title">Terdekat Lainnya</div>
-      <div class="nearby">
-        <div class="nearby-item">📍 Risen Computer – 500 meter</div>
-        <div class="nearby-item">📍 Kangservis.id – 650 meter</div>
+      <div class="nearby" id="nearbyContainer">
+        <div class="nearby-item">Mencari toko terdekat...</div>
       </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
   <script>
     // Initialize map
     let map;
     let marker;
+    let userMarker;
+    let storeLocation;
+    let userLocation;
+    let connectionLine;
 
     function initMap() {
       // Get store ID from URL parameter
@@ -181,6 +248,9 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19
       }).addTo(map);
+
+      // Store location for zoom functions
+      storeLocation = [defaultLat, defaultLng];
 
       // Add marker for store location
       marker = L.marker([defaultLat, defaultLng]).addTo(map);
@@ -217,84 +287,243 @@
         newLayananP.innerHTML = `<span>Layanan:</span> ${layananText}`;
         infoParts[2].parentNode.insertBefore(newLayananP, infoParts[3]);
       }
+
+      // Calculate and display nearby stores
+      calculateNearbyStores(storeData);
     }
 
-    // Initialize when page loads
-    window.onload = initMap;
+    // Function to calculate distance between two coordinates using Haversine formula
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of Earth in kilometers
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const distance = R * c * 1000; // Distance in meters
+      return Math.round(distance);
+    }
 
-    // Global variables for user location and polyline
-    let userMarker;
-    let routeLine;
-    let storeLocation;
+    function calculateNearbyStores(currentStore) {
+      // Get all stores data
+      const allStores = getAllStoresData();
+      
+      // Calculate distances and filter out current store
+      const storesWithDistance = allStores
+        .filter(store => store.idToko !== currentStore.idToko)
+        .map(store => ({
+          ...store,
+          distance: calculateDistance(
+            currentStore.lat, currentStore.long,
+            store.lat, store.long
+          )
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 2); // Get 2 nearest stores
 
-    function addUserLocationAndRoute(userLat, userLng) {
-      // Add user marker
-      userMarker = L.marker([userLat, userLng], {
-        icon: L.icon({
-          iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        })
-      }).addTo(map)
-        .bindPopup("<b>Lokasi Anda</b>");
+      // Update nearby container
+      const nearbyContainer = document.getElementById('nearbyContainer');
+      nearbyContainer.innerHTML = '';
 
-      // Get store location (from marker position)
-      if (marker) {
-        const storeLatLng = marker.getLatLng();
-        storeLocation = [storeLatLng.lat, storeLatLng.lng];
+      if (storesWithDistance.length === 0) {
+        nearbyContainer.innerHTML = '<div class="nearby-item">Tidak ada toko lain ditemukan</div>';
+        return;
+      }
 
-        // Create polyline connecting user to store
-        routeLine = L.polyline([
-          [userLat, userLng],
-          storeLocation
-        ], {
-          color: '#2563eb',
-          weight: 4,
-          opacity: 0.8,
-          dashArray: '10, 5'
-        }).addTo(map);
+      storesWithDistance.forEach(store => {
+        const distanceText = store.distance >= 1000 
+          ? `${(store.distance / 1000).toFixed(1)} km`
+          : `${store.distance} meter`;
+        
+        const nearbyItem = document.createElement('div');
+        nearbyItem.className = 'nearby-item';
+        nearbyItem.style.cursor = 'pointer';
+        nearbyItem.innerHTML = `📍 ${store.namaToko} – ${distanceText}`;
+        nearbyItem.onclick = () => {
+          window.location.href = `page3.html?id=${store.idToko}`;
+        };
+        nearbyContainer.appendChild(nearbyItem);
+      });
+    }
 
-        // Calculate distance
-        const distance = map.distance([userLat, userLng], storeLocation);
-        const distanceKm = (distance / 1000).toFixed(2);
+    function getAllStoresData() {
+      return [
+        {
+          idToko: 110,
+          namaToko: "Rozi Service Elektronik",
+          lat: -7.0562735,
+          long: 110.4347712
+        },
+        {
+          idToko: 111,
+          namaToko: "Baari Electronics Service",
+          lat: -7.0618468,
+          long: 110.4355362
+        },
+        {
+          idToko: 112,
+          namaToko: "Stasiun computer",
+          lat: -7.0565923,
+          long: 110.4333444
+        },
+        {
+          idToko: 113,
+          namaToko: "Yudi Servis",
+          lat: -7.0616478,
+          long: 110.4425616
+        },
+        {
+          idToko: 114,
+          namaToko: "KangService.id",
+          lat: -7.0529430,
+          long: 110.4358870
+        },
+        {
+          idToko: 115,
+          namaToko: "Putra Jaya Teknik",
+          lat: -7.0687200,
+          long: 110.4370500
+        },
+        {
+          idToko: 116,
+          namaToko: "Risen Computer",
+          lat: -7.0573853,
+          long: 110.4345477
+        },
+        {
+          idToko: 117,
+          namaToko: "Dinasti Komputer",
+          lat: -7.0572995,
+          long: 110.4327978
+        },
+        {
+          idToko: 118,
+          namaToko: "Pahlawan Laptop",
+          lat: -7.0552154,
+          long: 110.4327887
+        },
+        {
+          idToko: 119,
+          namaToko: "Servis Mesin Cuci Tembalang",
+          lat: -7.0551670,
+          long: 110.4147632
+        }
+      ];
+    }
 
-        // Add distance popup to the line
-        const midPoint = [
-          (userLat + storeLatLng.lat) / 2,
-          (userLng + storeLatLng.lng) / 2
-        ];
-
-        L.popup()
-          .setLatLng(midPoint)
-          .setContent(`<b>Jarak: ${distanceKm} km</b>`)
-          .openOn(map);
-
-        // Adjust map view to show both markers
-        const group = new L.featureGroup([userMarker, marker, routeLine]);
-        map.fitBounds(group.getBounds().pad(0.1));
+    // Zoom control functions
+    let isZoomedIn = false;
+    
+    function toggleZoom() {
+      const button = document.getElementById('zoomToggle');
+      if (isZoomedIn) {
+        map.zoomOut();
+        button.textContent = 'Zoom In';
+        isZoomedIn = false;
+      } else {
+        map.zoomIn();
+        button.textContent = 'Zoom Out';
+        isZoomedIn = true;
       }
     }
+
+    function zoomToStore() {
+      if (storeLocation) {
+        map.setView(storeLocation, 18);
+        marker.openPopup();
+      }
+    }
+
+    function zoomToUser() {
+      if (userLocation) {
+        map.setView(userLocation, 16);
+        if (userMarker) {
+          userMarker.openPopup();
+        }
+      } else {
+        alert('Lokasi pengguna belum ditemukan');
+      }
+    }
+
+    function drawConnectionLine() {
+      if (userLocation && storeLocation) {
+        // Remove existing line if it exists
+        if (connectionLine) {
+          map.removeLayer(connectionLine);
+        }
+        
+        // Draw line connecting user location to store
+        connectionLine = L.polyline([userLocation, storeLocation], {
+          color: '#ff6b6b',
+          weight: 3,
+          opacity: 0.7,
+          dashArray: '10, 5'
+        }).addTo(map);
+      }
+    }
+
+    // Initialize when page loads and Leaflet is ready
+    window.onload = function() {
+      // Wait for Leaflet to be fully loaded
+      if (typeof L !== 'undefined') {
+        initMap();
+      } else {
+        setTimeout(() => {
+          if (typeof L !== 'undefined') {
+            initMap();
+          }
+        }, 500);
+      }
+    };
   </script>
 
 <script>
-    // Minta izin lokasi pengguna
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        function(position) {
-          const userLat = position.coords.latitude;
-          const userLng = position.coords.longitude;
+    // Delay geolocation request until map is ready
+    setTimeout(() => {
+      // Minta izin lokasi pengguna
+      if ("geolocation" in navigator && typeof L !== 'undefined') {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
 
-          // Add user location and route line
-          addUserLocationAndRoute(userLat, userLng);
-        },
-        function(error) {
-          alert("Gagal mendapatkan lokasi: " + error.message);
+            // Store user location for zoom function
+            userLocation = [userLat, userLng];
+
+            // Marker lokasi pengguna dengan pin merah
+            userMarker = L.marker([userLat, userLng], {
+              icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+              })
+            }).addTo(map)
+              .bindPopup("<b>📍 Lokasi Anda</b>");
+
+            // Draw connection line between user and store
+            drawConnectionLine();
+
+            // Don't auto zoom to user, keep focus on store
+          },
+          function(error) {
+            alert("Gagal mendapatkan lokasi: " + error.message);
+          }
+        );
+      } else {
+        if (typeof L === 'undefined') {
+          // Retry if Leaflet is not loaded yet
+          setTimeout(arguments.callee, 500);
+        } else {
+          alert("Geolocation tidak didukung di browser ini.");
         }
-      );
-    } else {
-      alert("Geolocation tidak didukung di browser ini.");
-    }
+      }
+    }, 1500); // Wait 1.5 seconds for map initialization
   </script>
+  <script src="script.js"></script>
 </body>
 
 </html>
