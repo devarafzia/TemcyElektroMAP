@@ -220,7 +220,6 @@
     let userMarker;
     let storeLocation;
     let userLocation;
-    let connectionLine;
 
     function initMap() {
       // Get store ID from URL parameter
@@ -446,23 +445,6 @@
       }
     }
 
-    function drawConnectionLine() {
-      if (userLocation && storeLocation) {
-        // Remove existing line if it exists
-        if (connectionLine) {
-          map.removeLayer(connectionLine);
-        }
-        
-        // Draw line connecting user location to store
-        connectionLine = L.polyline([userLocation, storeLocation], {
-          color: '#ff6b6b',
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '10, 5'
-        }).addTo(map);
-      }
-    }
-
     // Initialize when page loads and Leaflet is ready
     window.onload = function() {
       // Wait for Leaflet to be fully loaded
@@ -482,46 +464,38 @@
     // Delay geolocation request until map is ready
     setTimeout(() => {
       // Minta izin lokasi pengguna
-      if ("geolocation" in navigator && typeof L !== 'undefined') {
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
+      if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
 
-            // Store user location for zoom function
-            userLocation = [userLat, userLng];
+          // Store user location for zoom function
+          userLocation = [userLat, userLng];
 
-            // Marker lokasi pengguna dengan pin merah
-            userMarker = L.marker([userLat, userLng], {
-              icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-              })
-            }).addTo(map)
-              .bindPopup("<b>📍 Lokasi Anda</b>");
+          // Marker lokasi pengguna dengan pin merah
+          userMarker = L.marker([userLat, userLng], {
+            icon: L.icon({
+              iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+              shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+              iconSize: [25, 41],
+              iconAnchor: [12, 41],
+              popupAnchor: [1, -34],
+              shadowSize: [41, 41]
+            })
+          }).addTo(map)
+            .bindPopup("<b>📍 Lokasi Anda</b>");
 
-            // Draw connection line between user and store
-            drawConnectionLine();
-
-            // Don't auto zoom to user, keep focus on store
-          },
-          function(error) {
-            alert("Gagal mendapatkan lokasi: " + error.message);
-          }
-        );
-      } else {
-        if (typeof L === 'undefined') {
-          // Retry if Leaflet is not loaded yet
-          setTimeout(arguments.callee, 500);
-        } else {
-          alert("Geolocation tidak didukung di browser ini.");
+          // Don't auto zoom to user, keep focus on store
+        },
+        function(error) {
+          alert("Gagal mendapatkan lokasi: " + error.message);
         }
+      );
+    } else {
+        alert("Geolocation tidak didukung di browser ini.");
       }
-    }, 1500); // Wait 1.5 seconds for map initialization
+    }, 1000); // Wait 1 second for map initialization
   </script>
   <script src="script.js"></script>
 </body>
